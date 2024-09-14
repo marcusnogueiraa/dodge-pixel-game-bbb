@@ -1,1 +1,8 @@
+# Types
+*.out
+
+# Folders
 /.vscode
+
+# Files
+game_logic.c

@@ -35,14 +35,14 @@ int main(void){
 
 	timerSetup(TIMER7);
 
-    putString(UART0, "- Inicializando\n", 16);    
+    putString(UART0, "- Inicializando\n", 16);   
+    set_pixel_status(0, 0, HIGH);
     while(true){
         for(int i = 0; i < 4; i++){
             for(int j = 0; j < 2; j++){
-                EntityPixel pixel = pixelMapping[i][j];
-                GpioSetPinValue(pixel.gpioMod, pixel.pinNumber, HIGH);
+                set_pixel_status(i, j, HIGH);
                 delay(500, TIMER7);
-                GpioSetPinValue(pixel.gpioMod, pixel.pinNumber, LOW);
+                set_pixel_status(i, j, LOW);
             }
         }
     }
@@ -54,19 +54,24 @@ void setupGpio(){
 	Init_module_gpio(GPIO1);
     Init_module_gpio(GPIO2);
 
-	cmSetCtrlModule(rightButton.controlModule, GPIO_MODULE);
-    cmSetCtrlModule(leftButton.controlModule, GPIO_MODULE);
+	//cmSetCtrlModule(rightButton.controlModule, GPIO_MODULE);
+    //cmSetCtrlModule(leftButton.controlModule, GPIO_MODULE);
 
 	for(int i = 0; i < 4; i++)
         for(int j = 0; j < 2; j++)
             cmSetCtrlModule(pixelMapping[i][j].controlModule, GPIO_MODULE);
 
-    Init_pin_gpio(rightButton.gpioMod, rightButton.pinNumber, INPUT);
-    Init_pin_gpio(leftButton.gpioMod, leftButton.pinNumber, INPUT);
+    //Init_pin_gpio(rightButton.gpioMod, rightButton.pinNumber, INPUT);
+    //Init_pin_gpio(leftButton.gpioMod, leftButton.pinNumber, INPUT);
 
 	for(int i = 0; i < 4; i++)
         for(int j = 0; j < 2; j++)
             Init_pin_gpio(pixelMapping[i][j].gpioMod, pixelMapping[i][j].pinNumber, OUTPUT);
+}
+
+void set_pixel_status(int i, int j, bool status){
+    EntityPixel pixel = pixelMapping[i][j];
+    GpioSetPinValue(pixel.gpioMod, pixel.pinNumber, status);
 }
 
 void render_frame(){
