@@ -37,6 +37,7 @@ int main(void){
 
     putString(UART0, "- Inicializando\n", 16);   
     set_pixel_status(0, 0, HIGH);
+   
     while(true){
         for(int i = 0; i < 4; i++){
             for(int j = 0; j < 2; j++){
