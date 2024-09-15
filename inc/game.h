@@ -3,6 +3,20 @@
 
 #include "gpio.h"
 
+#define GRID_HEIGHT 4
+#define GRID_WIDTH 2
+
+#define LEFT_COLUMN 0
+#define RIGHT_COLUMN 1
+
+#define PLAYER_LINE (GRID_HEIGHT-1)
+
+typedef enum ENTITY {
+    EMPTY = 0,
+    OBSTACLE = 1,
+    PLAYER = 2
+} ENTITY;
+
 typedef struct EntityPixel {
     gpioMod gpioMod;
     unsigned char pinNumber;
@@ -15,25 +29,24 @@ typedef struct ButtonGpio {
     CONTROL_MODULE controlModule;
 } ButtonGpio;
 
-ButtonGpio leftButton = {GPIO1, PIN13, CM_conf_gpmc_ad13};
-ButtonGpio rightButton = {GPIO1, PIN14, CM_conf_gpmc_ad14};
+extern ButtonGpio leftButton;
+extern ButtonGpio rightButton;
+extern EntityPixel pixelMapping[4][2];
 
-EntityPixel pixelMapping[4][2] = {
-    //          18                                  34
-    { {GPIO2, 1, CM_conf_gpmc_clk}, {GPIO2, 17, CM_conf_lcd_data11} },
-    //          38                                  37
-    { {GPIO2, 15, CM_conf_lcd_data9}, {GPIO2, 14, CM_conf_lcd_data8} },
-    //          42                                  41
-    { {GPIO2, 11, CM_conf_lcd_data5}, {GPIO2, 10, CM_conf_lcd_data4} },
-    //          45                                  46
-    { {GPIO2, 6, CM_conf_lcd_data0}, {GPIO2, 7, CM_conf_lcd_data1} }
-};
+typedef enum STATE {
+    GENERATE_STATE = 0,
+    DOWN_OBSTACLES_1 = 1,
+    DOWN_OBSTACLES_2 = 2,
+    DOWN_OBSTACLES_3 = 3
+} STATE;
 
-int grid[4][2] = {
-    {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 1},    
-};
+extern ENTITY grid[GRID_HEIGHT][GRID_WIDTH];
 
-#endif
+extern bool isPlaying;
+
+void move_left(void);
+void move_right(void);
+bool is_empty(int i, int j);
+bool is_obstacle(int i, int j);
+
+#endif // GAME_H_

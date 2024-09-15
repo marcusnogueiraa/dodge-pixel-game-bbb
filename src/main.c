@@ -32,17 +32,24 @@ int main(void){
 	setupGpio();
 
     Interrupt_Setup(95);
+    Interrupt_Setup(98);
+    Pin_Interrup_Config(leftButton.gpioMod, leftButton.pinNumber, type0);
+    Pin_Interrup_Config(rightButton.gpioMod, rightButton.pinNumber, type0);
 
 	timerSetup(TIMER7);
 
-    putString(UART0, "- Inicializando\n", 16);   
+    putString(UART0, "[LOG] Inicializando\n\r", 21);   
     //set_pixel_status(3, 1, HIGH);
    
     while(true){
+        putString(UART0, "[LOG] Estado Ocioso\n\r", 21);
         while(!GpioGetPinValue(leftButton.gpioMod, leftButton.pinNumber) 
                 && !GpioGetPinValue(rightButton.gpioMod, rightButton.pinNumber));
+        putString(UART0, "[LOG] Jogo Iniciado\n\r", 21);
 
+        isPlaying = true;
         render_frame();
+        while(true);
     }
 
 	return 0;
@@ -115,15 +122,24 @@ void disableWdt(void){
 
 void ISR_Handler(void) {
     unsigned int irq_number = HWREG(INTC_BASE + INTC_SIR_IRQ) & 0x7F;
-    
+
+    putString(UART0, "[SYS] Tratando Interrupcao\n\r", 28);   
     switch (irq_number){
         case 95: // TIMER
             timerIrqHandler(TIMER7);
             break;
         case 98: { // GPIO1
             unsigned int gpioStatus0 = HWREG(SOC_GPIO_1_REGS + GPIO_IRQSTATUS_RAW_0);
-            if (gpioStatus0 & (1 << 1)) {
-                gpioIsrHandler(GPIO1, type0, 0);
+            if (gpioStatus0 & (1 << leftButton.pinNumber)) {
+                gpioIsrHandler(GPIO1, type0, leftButton.pinNumber);
+                putString(UART0, "[LOG] Left Button\n\r", 19);
+                move_left();
+            }
+
+            else if (gpioStatus0 & (1 << rightButton.pinNumber)) {
+                gpioIsrHandler(GPIO1, type0, rightButton.pinNumber);
+                putString(UART0, "[LOG] Right Button\n\r", 20);
+                move_right();
                 return;
             }
             break;
