@@ -45,6 +45,7 @@ int main(void){
         putString(UART0, "[LOG] Estado Ocioso\n\r", 21);
         while(!GpioGetPinValue(leftButton.gpioMod, leftButton.pinNumber) 
                 && !GpioGetPinValue(rightButton.gpioMod, rightButton.pinNumber));
+        log_grid();
         putString(UART0, "[LOG] Jogo Iniciado\n\r", 21);
 
         isPlaying = true;
@@ -87,6 +88,22 @@ void render_frame(){
             GpioSetPinValue(gpio->gpioMod, gpio->pinNumber, status);
         }
     }
+}
+
+void log_grid(){
+    putString(UART0, "\n\r", 2);
+    putString(UART0, "[LOG] GameGrid:\n\r", 17);
+    for(int i = 0; i < GRID_HEIGHT; i++){
+        for(int j = 0; j < GRID_WIDTH; j++){
+            unsigned char id = '2';
+            if (grid[i][j] == OBSTACLE) id = '1';
+            else if (grid[i][j] == EMPTY) id = '0';
+
+            putCh(UART0, id);
+        }
+        putString(UART0, "\n\r", 2);
+    }
+    putString(UART0, "\n\r", 2);
 }
 
 unsigned int showUartMenu(){
@@ -134,12 +151,17 @@ void ISR_Handler(void) {
                 gpioIsrHandler(GPIO1, type0, leftButton.pinNumber);
                 putString(UART0, "[LOG] Left Button\n\r", 19);
                 move_left();
+                log_grid();
+                render_frame();
+                return;
             }
 
             else if (gpioStatus0 & (1 << rightButton.pinNumber)) {
                 gpioIsrHandler(GPIO1, type0, rightButton.pinNumber);
                 putString(UART0, "[LOG] Right Button\n\r", 20);
                 move_right();
+                log_grid();
+                render_frame();
                 return;
             }
             break;
