@@ -84,3 +84,54 @@ void uartClearBuffer(UART_t uart){
    while((HWREG(uart_base+0x14)&0x1)==1)
       getCh(uart);
 }
+
+// Função para realizar divisão usando subtrações
+// Retorna o quociente e o resto
+void divide(int dividend, int divisor, int* quotient, int* remainder) {
+    // Inicializa o quociente e o resto
+    *quotient = 0;
+    *remainder = dividend;
+    
+    // Verifica se o divisor é zero
+    if (divisor == 0) {
+        return; // Divisão por zero não é permitida
+    }
+
+    // Realiza a divisão por subtrações repetidas
+    while (*remainder >= divisor) {
+        *remainder -= divisor;
+        (*quotient)++;
+    }
+}
+
+void putInt(UART_t uart, int number) {
+    char buffer[12];  // Buffer para armazenar a string, considerando número máximo de 10 dígitos + sinal e terminador nulo
+    int index = 0;
+    int quotient, remainder;
+
+    // Handle special case of 0
+    if (number == 0) {
+        buffer[index++] = '0';
+    } else {
+        // Handle negative numbers
+        if (number < 0) {
+            buffer[index++] = '-';
+            number = -number;
+        }
+
+        // Convert number to string
+        int divisor = 1000000000;  // 10^9, para garantir que cobremos o maior número possível
+        while (divisor > 0) {
+            // Usar a função divide para encontrar o dígito
+            divide(number, divisor, &quotient, &remainder);
+            if (quotient != 0 || index > 0) {
+                buffer[index++] = quotient + '0';  // Adicionar dígito ao buffer
+            }
+            number = remainder;  // Atualizar o número com o resto
+            divisor /= 10;       // Dividir o divisor por 10 para o próximo dígito
+        }
+    }
+
+    buffer[index] = '\0';  // Terminar a string
+    putString(uart, buffer, index);  // Enviar a string via UART
+}

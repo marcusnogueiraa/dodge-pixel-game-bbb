@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+
 #include "gpio.h"
 #include "control_module.h"
 #include "timers.h"
@@ -10,17 +11,20 @@
 
 #define GPIO_MODULE     7
 
-#define UART_BUTTON_PIN     
-#define SEQUENCE_BUTTON_PIN 
-
 /*-----------------------------------------------------------------------------
 *	All Functions
 *-----------------------------------------------------------------------------*/
 
 void setupGpio();
-unsigned int showUartMenu();
 void disableWdt(void);
+void idle_mode();
+void render_frame();
+void log_grid();
+int get_random_column();
+unsigned int random_number();
+unsigned int showUartMenu();
 
+unsigned int seed = 1;
 unsigned int delayInMs = 0;
 const int inputUartSize = 5;
 
@@ -29,31 +33,67 @@ const int inputUartSize = 5;
 *-----------------------------------------------------------------------------*/
 int main(void){
 	disableWdt();
-	setupGpio();
+
+	timerSetup(TIMER7);
+    timerEnable(TIMER7);
+	
+    setupGpio();
 
     Interrupt_Setup(95);
     Interrupt_Setup(98);
     Pin_Interrup_Config(leftButton.gpioMod, leftButton.pinNumber, type0);
     Pin_Interrup_Config(rightButton.gpioMod, rightButton.pinNumber, type0);
 
-	timerSetup(TIMER7);
 
     putString(UART0, "[LOG] Inicializando\n\r", 21);   
     //set_pixel_status(3, 1, HIGH);
-   
+    
     while(true){
-        putString(UART0, "[LOG] Estado Ocioso\n\r", 21);
-        while(!GpioGetPinValue(leftButton.gpioMod, leftButton.pinNumber) 
-                && !GpioGetPinValue(rightButton.gpioMod, rightButton.pinNumber));
-        log_grid();
+        idle_mode();
+        
         putString(UART0, "[LOG] Jogo Iniciado\n\r", 21);
-
         isPlaying = true;
+        
+        log_grid();
         render_frame();
-        while(true);
+        while(isPlaying){
+            unsigned int random = get_random_column();
+            if (random == 1) putCh(UART0, '1');
+            else putCh(UART0, '0');
+        }
     }
 
 	return 0;
+}
+
+unsigned int random_number(){
+    unsigned int x = seed;
+    x ^= (x << 13);
+    x ^= (x >> 17);
+    x ^= (x << 5);
+    seed = x;
+    return seed;
+}
+
+int get_random_column(){
+    return random_number() & 1;
+}
+
+void idle_mode(){
+    putString(UART0, "[LOG] Estado Ocioso\n\r", 21);
+    while(!GpioGetPinValue(leftButton.gpioMod, leftButton.pinNumber) 
+            && !GpioGetPinValue(rightButton.gpioMod, rightButton.pinNumber));
+    seed = timerRead(TIMER7);
+    putString(UART0, "Seed: \n\r", 8);
+    putInt(UART0, seed);
+    putCh(UART0, '\n');
+    putCh(UART0, '\r');
+    timerDisable(TIMER7);
+}
+
+void match_mode(){
+    log_grid();
+    
 }
 
 void setupGpio(){

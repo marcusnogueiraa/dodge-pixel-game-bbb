@@ -87,5 +87,6 @@ void timerDisable(Timer);
 void delay(unsigned int ,Timer);
 void timerSetup(Timer);
 void timerIrqHandler(Timer);
+unsigned int timerRead(Timer timer);
 
 #endif /*TIMERS_H_ */

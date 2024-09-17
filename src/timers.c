@@ -104,3 +104,17 @@ void delay(unsigned int count, Timer timer) {
         count--;
     }
 }
+
+unsigned int timerRead(Timer timer) {
+    unsigned int timerBaseAddr;
+    switch (timer) {
+        case TIMER2: timerBaseAddr = SOC_DMTIMER_2_REGS; break;
+        case TIMER3: timerBaseAddr = SOC_DMTIMER_3_REGS; break;
+        case TIMER4: timerBaseAddr = SOC_DMTIMER_4_REGS; break;
+        case TIMER5: timerBaseAddr = SOC_DMTIMER_5_REGS; break;
+        case TIMER6: timerBaseAddr = SOC_DMTIMER_6_REGS; break;
+        case TIMER7: timerBaseAddr = SOC_DMTIMER_7_REGS; break;
+        default: return 0; // Retorna 0 ou outro valor para um caso inválido
+    }
+    return HWREG(timerBaseAddr + DMTIMER_TCRR);
+}

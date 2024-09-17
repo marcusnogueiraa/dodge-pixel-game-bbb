@@ -304,6 +304,7 @@ int putString(UART_t uart, char *str, unsigned int length);
  **/
 int uartGetString(UART_t uart, char *buf, unsigned int length);
 void uartClearBuffer(UART_t );
+void putInt(UART_t uart, int number);
 
 static const unsigned int UART_ARRAY_BASE[] = {SOC_UART_0_REGS, SOC_UART_1_REGS, SOC_UART_2_REGS, SOC_UART_3_REGS, SOC_UART_4_REGS, SOC_UART_5_REGS};
 
