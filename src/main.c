@@ -15,18 +15,21 @@
 *	All Functions
 *-----------------------------------------------------------------------------*/
 
+void log_grid();
 void setupGpio();
 void disableWdt(void);
 void idle_mode();
 void render_frame();
-void log_grid();
-int get_random_column();
+void knock_animation();
+void reset_grid();
+void match_tasks(STATE *state);
 unsigned int random_number();
-unsigned int showUartMenu();
+unsigned char get_random_column();
+bool verify_colision(unsigned char column);
 
 unsigned int seed = 1;
-unsigned int delayInMs = 0;
-const int inputUartSize = 5;
+bool firstTimePlaying = false;
+bool blockIsr = false;
 
 /*-----------------------------------------------------------------------------
 *  Main Function
@@ -44,22 +47,19 @@ int main(void){
     Pin_Interrup_Config(leftButton.gpioMod, leftButton.pinNumber, type0);
     Pin_Interrup_Config(rightButton.gpioMod, rightButton.pinNumber, type0);
 
+    unsigned int delayInMs = 200;
 
     putString(UART0, "[LOG] Inicializando\n\r", 21);   
-    //set_pixel_status(3, 1, HIGH);
     
     while(true){
         idle_mode();
-        
-        putString(UART0, "[LOG] Jogo Iniciado\n\r", 21);
         isPlaying = true;
         
-        log_grid();
-        render_frame();
+        STATE current_state = GENERATE_STATE;
+        putString(UART0, "[LOG] Jogo Iniciado\n\r", 21);
         while(isPlaying){
-            unsigned int random = get_random_column();
-            if (random == 1) putCh(UART0, '1');
-            else putCh(UART0, '0');
+            match_tasks(&current_state);
+            delay(delayInMs, TIMER7);
         }
     }
 
@@ -75,25 +75,119 @@ unsigned int random_number(){
     return seed;
 }
 
-int get_random_column(){
-    return random_number() & 1;
+unsigned char get_random_column(){
+    return random_number() % 2;
 }
 
 void idle_mode(){
     putString(UART0, "[LOG] Estado Ocioso\n\r", 21);
+
+    reset_grid();
+    render_frame();
+    log_grid();
+
     while(!GpioGetPinValue(leftButton.gpioMod, leftButton.pinNumber) 
             && !GpioGetPinValue(rightButton.gpioMod, rightButton.pinNumber));
-    seed = timerRead(TIMER7);
-    putString(UART0, "Seed: \n\r", 8);
-    putInt(UART0, seed);
-    putCh(UART0, '\n');
-    putCh(UART0, '\r');
-    timerDisable(TIMER7);
+    
+    if (firstTimePlaying){
+        seed = timerRead(TIMER7);
+        if (seed == 0) seed = 123;
+
+        putString(UART0, "Seed: \n\r", 8);
+        putInt(UART0, seed);
+        putCh(UART0, '\n');
+        putCh(UART0, '\r');
+        timerDisable(TIMER7);
+        firstTimePlaying = false;
+    } 
 }
 
-void match_mode(){
+void reset_grid(){
+    for(int i = 0; i < GRID_HEIGHT; i++){
+        for(int j = 0; j < GRID_WIDTH; j++){
+            grid[i][j] = EMPTY;
+        }
+    }
+    grid[3][RIGHT_COLUMN] = PLAYER;
+}
+
+void match_tasks(STATE *state){
+    handle_state(state);
+    render_frame();
     log_grid();
-    
+}
+
+void handle_state(STATE *state) {
+    if (*state == GENERATE_STATE) {
+        // Gera um obstáculo em uma coluna pseudo aleatória
+        unsigned char obstacle_j = get_random_column();
+        grid[0][obstacle_j] = OBSTACLE;
+
+        // Desaparece com os obstáculos da margem inferior
+        if (is_obstacle(PLAYER_LINE, LEFT_COLUMN)) grid[PLAYER_LINE][LEFT_COLUMN] = EMPTY;
+        else if (is_obstacle(PLAYER_LINE, RIGHT_COLUMN)) grid[PLAYER_LINE][RIGHT_COLUMN] = EMPTY;
+        
+        // Atualiza o estado para o próximo
+        update_state(state);
+    } else {
+        // Verifica qual coluna o obstáculo está
+        unsigned char obstacle_j;
+        if (is_obstacle(*state - 1, LEFT_COLUMN)) obstacle_j = LEFT_COLUMN;
+        else obstacle_j = RIGHT_COLUMN;
+
+        if (*state == DOWN_OBSTACLES_3 && verify_colision(obstacle_j)){
+            blockIsr = true;
+            putString(UART0, "[LOG] Game Over\n\r", 17);
+            knock_animation(obstacle_j);
+            isPlaying = false;
+            blockIsr = false;
+            return;
+        } 
+
+        // Movimenta o obstáculo para baixo
+        grid[*state - 1][obstacle_j] = EMPTY;
+        grid[*state][obstacle_j] = OBSTACLE;
+
+        // Atualiza o estado para o próximo
+        update_state(state);
+    }
+}
+
+void knock_animation(int column){
+    for(int i = 0; i < 3; i++){
+        set_pixel_status(3, column, HIGH);
+        set_pixel_status(2, column, HIGH);
+        delay(200, TIMER7);
+        set_pixel_status(3, column, LOW);
+        set_pixel_status(2, column, LOW);
+        delay(200, TIMER7);
+    }
+}
+
+bool verify_colision(unsigned char column){
+    return grid[3][column] == PLAYER && grid[2][column] == OBSTACLE; 
+}
+
+void update_state(STATE *state) {
+    // Transição cíclica entre estados
+    switch (*state) {
+        case GENERATE_STATE:
+            *state = DOWN_OBSTACLES_1;
+            break;
+        case DOWN_OBSTACLES_1:
+            *state = DOWN_OBSTACLES_2;
+            break;
+        case DOWN_OBSTACLES_2:
+            *state = DOWN_OBSTACLES_3;
+            break;
+        case DOWN_OBSTACLES_3:
+            *state = GENERATE_STATE;
+            break;
+        default:
+            // Estado inválido, reinicia para GENERATE_STATE
+            *state = GENERATE_STATE;
+            break;
+    }
 }
 
 void setupGpio(){
@@ -146,29 +240,6 @@ void log_grid(){
     putString(UART0, "\n\r", 2);
 }
 
-unsigned int showUartMenu(){
-    char buffer[inputUartSize]; 
-
-    unsigned int ms = 0;
-
-    putString(UART0, "Defina o tempo de delay (0-9999): ", 35);
-    uartGetString(UART0, buffer, inputUartSize);
-    putString(UART0, "\n\r", 2);
-    buffer[inputUartSize-1] = '\0';  
-
-	int index = 0;
-	while(buffer[index] != '\0'){
-		if (buffer[index] < '0' || buffer[index] > '9'){
-			putString(UART0,"\nERRO\n\r", 7);
-			return 1000;
-		}
-		ms = ms * 10 + (buffer[index] - '0');
-		index++;
-	}
-
-    return ms;
-}
-
 void disableWdt(void){
 	HWREG(WDT_WSPR) = 0xAAAA;
 	while((HWREG(WDT_WWPS) & (1<<4)));
@@ -178,6 +249,7 @@ void disableWdt(void){
 }
 
 void ISR_Handler(void) {
+    //if (blockIsr) return;
     unsigned int irq_number = HWREG(INTC_BASE + INTC_SIR_IRQ) & 0x7F;
 
     putString(UART0, "[SYS] Tratando Interrupcao\n\r", 28);   
