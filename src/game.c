@@ -7,14 +7,14 @@ EntityGpio rightButton = {GPIO1, 14, CM_conf_gpmc_ad14}; // P8-16
 EntityGpio buzzer = {GPIO1, 28, CM_conf_gpmc_ben1}; // P9-12
 
 EntityGpio pixelMapping[4][2] = {
-    //          18                                  34
-    { {GPIO2, 1, CM_conf_gpmc_clk}, {GPIO2, 17, CM_conf_lcd_data11} },
-    //          38                                  37
-    { {GPIO2, 15, CM_conf_lcd_data9}, {GPIO2, 14, CM_conf_lcd_data8} },
-    //          42                                  41
-    { {GPIO2, 11, CM_conf_lcd_data5}, {GPIO2, 10, CM_conf_lcd_data4} },
-    //          45                                  46
-    { {GPIO2, 6, CM_conf_lcd_data0}, {GPIO2, 7, CM_conf_lcd_data1} }
+    //          P8-18                             P9-15
+    { {GPIO2, 1, CM_conf_gpmc_clk}, {GPIO1, 16, CM_conf_gpmc_a0} },
+    //          P8-38                             P9-23
+    { {GPIO2, 15, CM_conf_lcd_data9}, {GPIO1, 17, CM_conf_gpmc_a1} },
+    //          P8-42                             P9-14
+    { {GPIO2, 11, CM_conf_lcd_data5}, {GPIO1, 18, CM_conf_gpmc_a2} },
+    //          P8-45                             P9-16
+    { {GPIO2, 6, CM_conf_lcd_data0}, {GPIO1, 19, CM_conf_gpmc_a3} }
 };
 
 ENTITY grid[GRID_HEIGHT][GRID_WIDTH] = {
