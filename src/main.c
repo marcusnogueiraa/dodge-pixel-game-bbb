@@ -24,6 +24,7 @@ void knock_animation();
 void reset_grid();
 void match_tasks(STATE *state);
 void knock_song();
+void update_delay(unsigned int *delay);
 unsigned int random_number();
 unsigned char get_random_column();
 bool verify_colision(unsigned char column);
@@ -47,11 +48,11 @@ int main(void){
     Pin_Interrup_Config(leftButton.gpioMod, leftButton.pinNumber, type0);
     Pin_Interrup_Config(rightButton.gpioMod, rightButton.pinNumber, type0);
 
-    unsigned int delayInMs = 200;
-
     putString(UART0, "[LOG] Inicializando\n\r", 21);   
-    
+    blockIsr = false;
+
     while(true){
+        unsigned int delayInMs = 400;
         idle_mode();
         isPlaying = true;
         
@@ -60,10 +61,21 @@ int main(void){
         while(isPlaying){
             match_tasks(&current_state);
             delay(delayInMs, TIMER7);
+            update_delay(&delayInMs);
         }
     }
 
 	return 0;
+}
+
+void update_delay(unsigned int *delay){
+    putString(UART0, "[SYS] delay: ", 13);
+    
+    putInt(UART0, *delay);
+    if (*delay > 100) *delay -= 1;
+
+    putCh(UART0, '\r');
+    putCh(UART0, '\n');
 }
 
 void knock_song(){
@@ -148,8 +160,8 @@ void handle_state(STATE *state) {
         else obstacle_j = RIGHT_COLUMN;
 
         if (*state == DOWN_OBSTACLES_3 && verify_colision(obstacle_j)){
-            blockIsr = true;
             putString(UART0, "[LOG] Game Over\n\r", 17);
+            blockIsr = true;
             knock_animation(obstacle_j);
             isPlaying = false;
             blockIsr = false;

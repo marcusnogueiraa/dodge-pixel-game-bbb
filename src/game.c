@@ -1,9 +1,10 @@
 #include "game.h"
+#include "uart.h"
 
 // Definição das variáveis globais
-EntityGpio leftButton = {GPIO1, 13, CM_conf_gpmc_ad13}; // P9-11
-EntityGpio rightButton = {GPIO1, 14, CM_conf_gpmc_ad14}; // P9-16
-EntityGpio buzzer = {GPIO1, 28, CM_conf_gpmc_ben1}; // P8-12
+EntityGpio leftButton = {GPIO1, 13, CM_conf_gpmc_ad13}; // P8-11
+EntityGpio rightButton = {GPIO1, 14, CM_conf_gpmc_ad14}; // P8-16
+EntityGpio buzzer = {GPIO1, 28, CM_conf_gpmc_ben1}; // P9-12
 
 EntityGpio pixelMapping[4][2] = {
     //          18                                  34
@@ -27,17 +28,19 @@ bool isPlaying = false;
 bool blockIsr = false;
 
 void move_left(void) {
-    if (blockIsr) return;
-    if (!isPlaying) return;
-    if (!is_empty(3, 0)) return;
+    if (blockIsr) {putCh(UART0, 'a'); return;}
+    if (!isPlaying) {putCh(UART0, 'b'); return;}
+    if (!is_empty(3, 0)) {putCh(UART0, 'c'); return;}
+    
     grid[3][RIGHT_COLUMN] = EMPTY;
     grid[3][LEFT_COLUMN] = PLAYER;
 }
 
 void move_right(void) {
-    if (blockIsr) return;
-    if (!isPlaying) return;
-    if (!is_empty(3, 1)) return;
+    if (blockIsr) {putCh(UART0, 'a'); return;}
+    if (!isPlaying) {putCh(UART0, 'b'); return;}
+    if (!is_empty(3, 1)) {putCh(UART0, 'c'); return;}
+    
     grid[3][LEFT_COLUMN] = EMPTY;
     grid[3][RIGHT_COLUMN] = PLAYER;
 }
