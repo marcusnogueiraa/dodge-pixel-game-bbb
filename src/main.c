@@ -23,13 +23,13 @@ void render_frame();
 void knock_animation();
 void reset_grid();
 void match_tasks(STATE *state);
+void knock_song();
 unsigned int random_number();
 unsigned char get_random_column();
 bool verify_colision(unsigned char column);
 
 unsigned int seed = 1;
 bool firstTimePlaying = false;
-bool blockIsr = false;
 
 /*-----------------------------------------------------------------------------
 *  Main Function
@@ -64,6 +64,18 @@ int main(void){
     }
 
 	return 0;
+}
+
+void knock_song(){
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, HIGH);
+    delay(50, TIMER7);
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, LOW);
+    delay(50, TIMER7);
+
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, HIGH);
+    delay(50, TIMER7);
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, LOW);
+    delay(50, TIMER7);
 }
 
 unsigned int random_number(){
@@ -155,6 +167,7 @@ void handle_state(STATE *state) {
 
 void knock_animation(int column){
     for(int i = 0; i < 3; i++){
+        knock_song();
         set_pixel_status(3, column, HIGH);
         set_pixel_status(2, column, HIGH);
         delay(200, TIMER7);
@@ -196,6 +209,7 @@ void setupGpio(){
 
 	cmSetCtrlModule(rightButton.controlModule, GPIO_MODULE);
     cmSetCtrlModule(leftButton.controlModule, GPIO_MODULE);
+    cmSetCtrlModule(buzzer.controlModule, GPIO_MODULE);
 
 	for(int i = 0; i < 4; i++)
         for(int j = 0; j < 2; j++)
@@ -204,13 +218,15 @@ void setupGpio(){
     Init_pin_gpio(rightButton.gpioMod, rightButton.pinNumber, INPUT);
     Init_pin_gpio(leftButton.gpioMod, leftButton.pinNumber, INPUT);
 
+    Init_pin_gpio(buzzer.gpioMod, buzzer.pinNumber, OUTPUT);
+
 	for(int i = 0; i < 4; i++)
         for(int j = 0; j < 2; j++)
             Init_pin_gpio(pixelMapping[i][j].gpioMod, pixelMapping[i][j].pinNumber, OUTPUT);
 }
 
 void set_pixel_status(int i, int j, bool status){
-    EntityPixel pixel = pixelMapping[i][j];
+    EntityGpio pixel = pixelMapping[i][j];
     GpioSetPinValue(pixel.gpioMod, pixel.pinNumber, status);
 }
 
@@ -218,7 +234,7 @@ void render_frame(){
     for(int i = 0; i < 4; i++){
         for(int j = 0; j <  2; j++){
             bool status = (grid[i][j] != 0);
-            EntityPixel *gpio = &pixelMapping[i][j]; 
+            EntityGpio *gpio = &pixelMapping[i][j]; 
             GpioSetPinValue(gpio->gpioMod, gpio->pinNumber, status);
         }
     }
@@ -249,7 +265,6 @@ void disableWdt(void){
 }
 
 void ISR_Handler(void) {
-    //if (blockIsr) return;
     unsigned int irq_number = HWREG(INTC_BASE + INTC_SIR_IRQ) & 0x7F;
 
     putString(UART0, "[SYS] Tratando Interrupcao\n\r", 28);   

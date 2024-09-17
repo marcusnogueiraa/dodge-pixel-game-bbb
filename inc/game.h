@@ -17,21 +17,16 @@ typedef enum ENTITY {
     PLAYER = 2
 } ENTITY;
 
-typedef struct EntityPixel {
+typedef struct EntityGpio {
     gpioMod gpioMod;
     unsigned char pinNumber;
     CONTROL_MODULE controlModule;
-} EntityPixel;
+} EntityGpio;
 
-typedef struct ButtonGpio {
-    gpioMod gpioMod;
-    unsigned char pinNumber;
-    CONTROL_MODULE controlModule;
-} ButtonGpio;
-
-extern ButtonGpio leftButton;
-extern ButtonGpio rightButton;
-extern EntityPixel pixelMapping[4][2];
+extern EntityGpio leftButton;
+extern EntityGpio rightButton;
+extern EntityGpio buzzer;
+extern EntityGpio pixelMapping[4][2];
 
 typedef enum STATE {
     GENERATE_STATE = 0,
@@ -43,6 +38,7 @@ typedef enum STATE {
 extern ENTITY grid[GRID_HEIGHT][GRID_WIDTH];
 
 extern bool isPlaying;
+extern bool blockIsr;
 
 void move_left(void);
 void move_right(void);

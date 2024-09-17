@@ -1,10 +1,11 @@
 #include "game.h"
 
 // Definição das variáveis globais
-ButtonGpio leftButton = {GPIO1, 13, CM_conf_gpmc_ad13}; // 11
-ButtonGpio rightButton = {GPIO1, 14, CM_conf_gpmc_ad14}; // 16
+EntityGpio leftButton = {GPIO1, 13, CM_conf_gpmc_ad13}; // P9-11
+EntityGpio rightButton = {GPIO1, 14, CM_conf_gpmc_ad14}; // P9-16
+EntityGpio buzzer = {GPIO1, 28, CM_conf_gpmc_ben1}; // P8-12
 
-EntityPixel pixelMapping[4][2] = {
+EntityGpio pixelMapping[4][2] = {
     //          18                                  34
     { {GPIO2, 1, CM_conf_gpmc_clk}, {GPIO2, 17, CM_conf_lcd_data11} },
     //          38                                  37
@@ -23,8 +24,10 @@ ENTITY grid[GRID_HEIGHT][GRID_WIDTH] = {
 };
 
 bool isPlaying = false;
+bool blockIsr = false;
 
 void move_left(void) {
+    if (blockIsr) return;
     if (!isPlaying) return;
     if (!is_empty(3, 0)) return;
     grid[3][RIGHT_COLUMN] = EMPTY;
@@ -32,6 +35,7 @@ void move_left(void) {
 }
 
 void move_right(void) {
+    if (blockIsr) return;
     if (!isPlaying) return;
     if (!is_empty(3, 1)) return;
     grid[3][LEFT_COLUMN] = EMPTY;
