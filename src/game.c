@@ -24,6 +24,7 @@ ENTITY grid[GRID_HEIGHT][GRID_WIDTH] = {
     {EMPTY, PLAYER}
 };
 
+unsigned int seed = 1;
 bool isPlaying = false;
 bool blockIsr = false;
 
@@ -52,3 +53,101 @@ bool is_empty(int i, int j) {
 bool is_obstacle(int i, int j) {
     return grid[i][j] == OBSTACLE;
 }
+
+bool verify_colision(unsigned char column){
+    return grid[3][column] == PLAYER && grid[2][column] == OBSTACLE; 
+}
+
+void knock_animation(int column){
+    for(int i = 0; i < 3; i++){
+        knock_song();
+        set_pixel_status(3, column, HIGH);
+        set_pixel_status(2, column, HIGH);
+        delay(200, TIMER7);
+        set_pixel_status(3, column, LOW);
+        set_pixel_status(2, column, LOW);
+        delay(200, TIMER7);
+    }
+}
+
+void knock_song(){
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, HIGH);
+    delay(50, TIMER7);
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, LOW);
+    delay(50, TIMER7);
+
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, HIGH);
+    delay(50, TIMER7);
+    GpioSetPinValue(buzzer.gpioMod, buzzer.pinNumber, LOW);
+    delay(50, TIMER7);
+}
+
+void update_state(STATE *state) {
+    switch (*state) {
+        case STATE_0:
+            *state = STATE_1;
+            break;
+        case STATE_1:
+            *state = STATE_2;
+            break;
+        case STATE_2:
+            *state = STATE_3;
+            break;
+        case STATE_3:
+            *state = STATE_0;
+            break;
+        default:
+            *state = STATE_0;
+            break;
+    }
+}
+
+void handle_state(STATE *state) {
+    if (*state == STATE_0) {
+        // Gera um obstáculo em uma coluna pseudo aleatória
+        unsigned char obstacle_j = get_random_column();
+        grid[0][obstacle_j] = OBSTACLE;
+
+        // Desaparece com os obstáculos da margem inferior
+        if (is_obstacle(PLAYER_LINE, LEFT_COLUMN)) grid[PLAYER_LINE][LEFT_COLUMN] = EMPTY;
+        else if (is_obstacle(PLAYER_LINE, RIGHT_COLUMN)) grid[PLAYER_LINE][RIGHT_COLUMN] = EMPTY;
+        
+        // Atualiza o estado para o próximo
+        update_state(state);
+    } else {
+        // Verifica qual coluna o obstáculo está
+        unsigned char obstacle_j;
+        if (is_obstacle(*state - 1, LEFT_COLUMN)) obstacle_j = LEFT_COLUMN;
+        else obstacle_j = RIGHT_COLUMN;
+
+        if (*state == STATE_3 && verify_colision(obstacle_j)){
+            putString(UART0, "[LOG] Game Over\n\r", 17);
+            blockIsr = true;
+            knock_animation(obstacle_j);
+            isPlaying = false;
+            blockIsr = false;
+            return;
+        } 
+
+        // Movimenta o obstáculo para baixo
+        grid[*state - 1][obstacle_j] = EMPTY;
+        grid[*state][obstacle_j] = OBSTACLE;
+
+        // Atualiza o estado para o próximo
+        update_state(state);
+    }
+}
+
+unsigned int random_number(){
+    unsigned int x = seed;
+    x ^= (x << 13);
+    x ^= (x >> 17);
+    x ^= (x << 5);
+    seed = x;
+    return seed;
+}
+
+unsigned char get_random_column(){
+    return random_number() % 2;
+}
+

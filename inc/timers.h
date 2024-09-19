@@ -88,5 +88,6 @@ void delay(unsigned int ,Timer);
 void timerSetup(Timer);
 void timerIrqHandler(Timer);
 unsigned int timerRead(Timer timer);
+void disableWdt(void);
 
 #endif /*TIMERS_H_ */

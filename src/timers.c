@@ -30,7 +30,7 @@ void timerEnable(Timer timer) {
         default: return;
     }
     DMTimerWaitForWrite(0x1, timer);
-    HWREG(timerBaseAddr + DMTIMER_TCLR) |= 0x1;  // Enable Timer
+    HWREG(timerBaseAddr + DMTIMER_TCLR) |= 0x1;
 }
 
 void timerDisable(Timer timer) {
@@ -45,7 +45,7 @@ void timerDisable(Timer timer) {
         default: return;
     }
     DMTimerWaitForWrite(0x1, timer);
-    HWREG(timerBaseAddr + DMTIMER_TCLR) &= ~0x1;  // Disable Timer
+    HWREG(timerBaseAddr + DMTIMER_TCLR) &= ~0x1;
 }
 
 void timerSetup(Timer timer) {
@@ -59,8 +59,8 @@ void timerSetup(Timer timer) {
         case TIMER7: clkCtrlReg = TIMER7_CLKCTRL; break;
         default: return;
     }
-    HWREG(SOC_CM_PER_REGS + clkCtrlReg) |= 0x2;  // Enable the clock
-    while ((HWREG(SOC_CM_PER_REGS + clkCtrlReg) & 0x3) != 0x2);  // Wait for clock to be enabled
+    HWREG(SOC_CM_PER_REGS + clkCtrlReg) |= 0x2;
+    while ((HWREG(SOC_CM_PER_REGS + clkCtrlReg) & 0x3) != 0x2);
 }
 
 void timerIrqHandler(Timer timer) {
@@ -75,9 +75,9 @@ void timerIrqHandler(Timer timer) {
         default: return;
     }
 
-    HWREG(timerBaseAddr + DMTIMER_IRQSTATUS) = 0x2;  // Clear interrupt
+    HWREG(timerBaseAddr + DMTIMER_IRQSTATUS) = 0x2;
     flag_timer = true;
-    timerDisable(timer);  // Disable timer after interrupt
+    timerDisable(timer);
 }
 
 void delay(unsigned int count, Timer timer) {
@@ -95,10 +95,10 @@ void delay(unsigned int count, Timer timer) {
     while (count != 0) {
         DMTimerWaitForWrite(0x2, timer);
 
-        HWREG(timerBaseAddr + DMTIMER_TCRR) = 0x0;  // Reset timer counter
+        HWREG(timerBaseAddr + DMTIMER_TCRR) = 0x0;
         timerEnable(timer);
 
-        while (HWREG(timerBaseAddr + DMTIMER_TCRR) < TIMER_1MS_COUNT);  // Wait for timer
+        while (HWREG(timerBaseAddr + DMTIMER_TCRR) < TIMER_1MS_COUNT);
 
         timerDisable(timer);
         count--;
@@ -114,7 +114,15 @@ unsigned int timerRead(Timer timer) {
         case TIMER5: timerBaseAddr = SOC_DMTIMER_5_REGS; break;
         case TIMER6: timerBaseAddr = SOC_DMTIMER_6_REGS; break;
         case TIMER7: timerBaseAddr = SOC_DMTIMER_7_REGS; break;
-        default: return 0; // Retorna 0 ou outro valor para um caso inválido
+        default: return 0;
     }
     return HWREG(timerBaseAddr + DMTIMER_TCRR);
+}
+
+void disableWdt(void){
+	HWREG(WDT_WSPR) = 0xAAAA;
+	while((HWREG(WDT_WWPS) & (1<<4)));
+	
+	HWREG(WDT_WSPR) = 0x5555;
+	while((HWREG(WDT_WWPS) & (1<<4)));
 }

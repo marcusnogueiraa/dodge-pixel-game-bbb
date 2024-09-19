@@ -1,9 +1,11 @@
 #include "gpio.h"
 #include "clock_module.h"
+#include "game.h"
+#include "uart.h"
+
 #define TOGGLE 0x01u
 
 int Init_module_gpio(gpioMod module){
-
     unsigned int val_temp = (1<<18) | (1<<2);
     switch (module)
     {
@@ -19,11 +21,9 @@ int Init_module_gpio(gpioMod module){
     default:
         break;
     }
-
 }
 
 int Init_pin_gpio(gpioMod module , unsigned char pin , Direction control){
-
     unsigned int val_temp = 0;
     switch (module)
     {
@@ -238,4 +238,24 @@ int Pin_Interrup_Config(gpioMod mod, ucPinNumber pin, GroupInterrup type) {
     HWREG(risingDetect) |= (1 << pin);
 
     return 1;
+}
+
+void gpioHandler(){
+    unsigned int gpioStatus0 = HWREG(SOC_GPIO_1_REGS + GPIO_IRQSTATUS_RAW_0);
+    if (gpioStatus0 & (1 << leftButton.pinNumber)) {
+        gpioIsrHandler(GPIO1, type0, leftButton.pinNumber);
+        putString(UART0, "[LOG] Left Button\n\r", 19);
+        move_left();
+        log_grid();
+        render_frame();
+        return;
+    }
+    else if (gpioStatus0 & (1 << rightButton.pinNumber)) {
+        gpioIsrHandler(GPIO1, type0, rightButton.pinNumber);
+        putString(UART0, "[LOG] Right Button\n\r", 20);
+        move_right();
+        log_grid();
+        render_frame();
+        return;
+    } 
 }

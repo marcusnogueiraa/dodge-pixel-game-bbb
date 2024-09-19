@@ -120,6 +120,7 @@ void GpioSetPinValue(gpioMod , ucPinNumber , Level);
 unsigned int GpioGetPinValue(gpioMod , ucPinNumber);
 int gpioIsrHandler(gpioMod , GroupInterrup , ucPinNumber);
 int Pin_Interrup_Config(gpioMod , ucPinNumber , GroupInterrup);
+void gpioHandler();
 
 /*-----------------------------------------------------------------------------
  *  Function prototype

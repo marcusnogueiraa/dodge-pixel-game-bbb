@@ -2,6 +2,26 @@
 #include "gpio.h"   
 #include "uart.h"
 #include "timers.h"
+#include "game.h"
+
+void ISR_Handler(void) {
+    unsigned int irq_number = HWREG(INTC_BASE + INTC_SIR_IRQ) & 0x7F;
+
+    putString(UART0, "[SYS] Tratando Interrupcao\n\r", 28);   
+    switch (irq_number){
+        case TIMER_ISR_NUMBER: 
+            timerIrqHandler(TIMER7);
+            break;
+        case GPIO_ISR_NUMBER: {
+            gpioHandler();
+            break;
+        }
+        default:
+            break;
+    }
+    
+    HWREG(INTC_BASE + INTC_CONTROL) = 0x1;
+}
 
 int Interrupt_Setup(unsigned int inter) {
     if (inter > 127) return false;

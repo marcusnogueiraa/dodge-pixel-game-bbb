@@ -43,6 +43,10 @@
 #define TIMER_1MS_COUNT                 		0x5DC0u
 #define TIMER_OVERFLOW                  		0xFFFFFFFFu
 
+#define TIMER_ISR_NUMBER 95
+#define GPIO_ISR_NUMBER 98
+
 int Interrupt_Setup(unsigned int inter);
+void ISR_Handler();
 
 #endif /*INTERRUPTION_H_ */
