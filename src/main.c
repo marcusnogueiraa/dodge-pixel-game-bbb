@@ -22,7 +22,6 @@ void idle_mode();
 void render_frame();
 void reset_grid();
 void update_delay(unsigned int *delay);
-bool verify_colision(unsigned char column);
 
 bool firstTimePlaying = false;
 
@@ -41,7 +40,7 @@ int main(void){
     blockIsr = false;
 
     while(true){
-        unsigned int delayInMs = 400;
+        unsigned int delayInMs = 300;
         idle_mode();
         isPlaying = true;
         
@@ -100,8 +99,15 @@ void idle_mode(){
     render_frame();
     log_grid();
 
+    blockIsr = true;
     while(!GpioGetPinValue(leftButton.gpioMod, leftButton.pinNumber) 
             && !GpioGetPinValue(rightButton.gpioMod, rightButton.pinNumber));
+    
+    if (GpioGetPinValue(leftButton.gpioMod, leftButton.pinNumber)) {
+        grid[3][LEFT_COLUMN] = PLAYER;
+        grid[3][RIGHT_COLUMN] = EMPTY;
+    }
+    blockIsr = false;
     
     if (firstTimePlaying){
         seed = timerRead(TIMER7);
